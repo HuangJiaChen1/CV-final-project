@@ -17,33 +17,19 @@ print("Testing data shape:", x_test.shape)
 print(x_train[0].shape)
 
 
-def generate_motion_blur_kernel(size=5, angle=0, speed=1):
+def generate_motion_blur_kernel(size=5, angle=0):
     """
     Generates a motion blur kernel given a size, an angle, and a speed factor.
     The 'speed' parameter controls the density of the kernel to simulate different speeds.
     """
-    # Basic kernel based on size
     kernel = np.zeros((size, size))
-
-    # Adjusting the kernel based on speed
-    if speed <= 1:
-        # For slower speeds, concentrate weight in the center
-        kernel[int((size - 1) / 2), :] = np.linspace(1 - speed, 1, num=size)
-    else:
-        # For higher speeds, spread weight towards the edges
-        spread = int(np.clip(speed, 1, size // 2))
-        center = int((size - 1) / 2)
-        kernel[center - spread:center + spread + 1, :] = np.linspace(0.1, 1, num=2 * spread + 1).reshape(-1, 1)
-
-    kernel = kernel / kernel.sum()  # Normalize the kernel
-
-    # Rotating the kernel to the specified angle
-    kernel = cv2.warpAffine(kernel, cv2.getRotationMatrix2D((size / 2 - 0.5, size / 2 - 0.5), angle, 1.0), (size, size))
-
+    kernel[int((size-1)/2), :] = np.ones(size)
+    kernel = cv2.warpAffine(kernel, cv2.getRotationMatrix2D((size/2-0.5, size/2-0.5), angle, 1.0), (size, size))
+    kernel = kernel / np.sum(kernel)
     return kernel
 
 
-def apply_motion_blur(image_path, kernel_size=5, speed=1):
+def apply_motion_blur(image_path, kernel_size=5):
     """
     Applies a motion blur effect to an image using a randomly generated motion blur kernel
     with a specified speed to adjust the density of the kernel.
@@ -58,7 +44,7 @@ def apply_motion_blur(image_path, kernel_size=5, speed=1):
     angle = np.random.uniform(0, 360)
 
     # Generate the motion blur kernel with the given speed
-    kernel = generate_motion_blur_kernel(size=kernel_size, angle=angle, speed=speed)
+    kernel = generate_motion_blur_kernel(size=kernel_size, angle=angle)
 
     # Apply the motion blur kernel to the image
     blurred_img = cv2.filter2D(img, -1, kernel)
@@ -82,10 +68,9 @@ def apply_motion_blur(image_path, kernel_size=5, speed=1):
     plt.show()
 
     # Return the motion blur kernel
-    return kernel
+    return kernel,angle
 
-
-y_train = np.zeros_like(x_train)
+y_train = np.zeros((x_train.shape[0],1))
 print(y_train.shape)
 y_test = np.zeros_like(x_test)
 # random kernel size and random angle
@@ -94,9 +79,16 @@ for i in range(x_train.shape[0]):
     # print(image)
     speed = int(np.random.uniform(0,8))
     k = int(np.random.uniform(3, 20))
-    kernel = apply_motion_blur(image, kernel_size= k,speed= 0)
+    _,angle = apply_motion_blur(image, kernel_size= k)
     print("Motion Blur Kernel:")
-    print(kernel)
+    print(angle)
 
-    # y_train[i] = kernel
 
+    ker = generate_motion_blur_kernel(k,angle)
+    blurred_img = cv2.filter2D(image, -1, ker)
+    img_diff = blurred_img-image
+    print(img_diff)
+    plt.figure(figsize=(10, 5))
+    plt.imshow(img_diff)
+    plt.title('diff Image')
+    plt.axis('off')
