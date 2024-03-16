@@ -3,39 +3,42 @@ import keras
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras import models, layers
-from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Dropout, Flatten, Dense
+from keras import models, layers
+from keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Dropout, Flatten, Dense
 import training
 def create_model():
-    # model = models.Sequential()
-    # model.add(layers.Conv2D(128, (5, 5), activation='relu', input_shape=(32, 32, 3)))
-    # # model.add(BatchNormalization())
-    # model.add(layers.MaxPooling2D((2, 2), strides= 2))
-    # # model.add(layers.Dropout(0.25))
-    #
-    # model.add(layers.Conv2D(256, (5, 5), activation='relu'))
-    # # model.add(BatchNormalization())
-    # model.add(layers.MaxPooling2D((2, 2),strides= 2))
-    # # model.add(layers.Dropout(0.25))
-    #
-    # model.add(layers.Conv2D(512, (5, 5), activation='relu'))
-    # model.add(layers.Flatten())
-    # model.add(Dense(512, activation='relu'))
-    # model.add(layers.Dense(271, activation='softmax'))
+    model = models.Sequential()
+    model.add(layers.Conv2D(128, (5, 5), activation='relu', input_shape=(32, 32, 3)))
+    # model.add(BatchNormalization())
+    model.add(layers.MaxPooling2D((2, 2), strides=2))
+    model.add(layers.Dropout(0.25))
 
-    base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
-    for layer in base_model.layers:
-        layer.trainable = False
-    x = base_model.output
-    x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Dense(1024, activation='relu')(x)
-    predictions = layers.Dense(271, activation='softmax')(x)
-    model = models.Model(inputs=base_model.input, outputs=predictions)
+    model.add(layers.Conv2D(256, (5, 5), activation='relu'))
+    # model.add(BatchNormalization())
+    model.add(layers.MaxPooling2D((2, 2), strides=2))
+    model.add(layers.Dropout(0.25))
+
+    model.add(layers.Conv2D(512, (5, 5), activation='relu'))
+    model.add(layers.Flatten())
+    model.add(Dense(1024, activation='relu'))
+    model.add(layers.Dense(271,activation='softmax'))
+
+    model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics=['accuracy'])
+
+    #
+    # base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False)
+    # for layer in base_model.layers:
+    #     layer.trainable = False
+    # x = base_model.output
+    # x = layers.GlobalAveragePooling2D()(x)
+    # x = Dense(1024, activation='relu')(x)
+    # predictions = Dense(271, activation='softmax')(x)
+    # model = models.Model(inputs=base_model.input, outputs=predictions)
     return model
 
 model = create_model()
-model.load_weights("./weights/w.weights.h5")
-x_test = np.concatenate((training.x_train[0:1],training.x_train[272:273]),axis= 0)
+model.load_weights("./checkpoint/weights.ckpt")
+x_test = np.concatenate((training.x_train[0:10],training.x_train[272:283]),axis= 0)
 print(x_test[0])
 predictions = model.predict(x_test)
 all_kernels = training.all_kernels

@@ -1,12 +1,11 @@
 import tensorflow as tf
 import keras
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras import models, layers
-from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Dropout, Flatten, Dense
+from keras.initializers.initializers import RandomNormal, Constant
+from keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Dropout, Flatten, Dense
+from tensorflow.python.keras import models, layers
 import os
-from tensorflow.keras.optimizers import Adam
 
 def load_or_preprocess():
     if os.path.exists('x_processed_train.npy') and os.path.exists('y_train.npy') and os.path.exists('kernels.npy'):
@@ -29,47 +28,49 @@ x_train, y_train, all_kernels = load_or_preprocess()
 print(y_train)
 if __name__ == "__main__":
 # Original Ver.
-    # model = models.Sequential()
-    #
-    # # Convolutional layers
-    # model.add(layers.Conv2D(128, (5, 5), activation='relu', input_shape=(32, 32, 3)))
-    # # model.add(BatchNormalization())
-    # model.add(layers.MaxPooling2D((2, 2), strides= 2))
-    # # model.add(layers.Dropout(0.25))
-    #
-    # model.add(layers.Conv2D(256, (5, 5), activation='relu'))
-    # # model.add(BatchNormalization())
-    # model.add(layers.MaxPooling2D((2, 2), strides= 2))
-    # # model.add(layers.Dropout(0.25))
+    model = models.Sequential()
+
+    # Convolutional layers
+    model.add(layers.Conv2D(96, (7,7), activation='relu', input_shape=(32, 32, 3)))
+    # model.add(BatchNormalization())
+    model.add(layers.MaxPooling2D((2, 2), strides= 2))
+    model.add(layers.Dropout(0.25))
+
+    model.add(layers.Conv2D(256, (5, 5), activation='relu'))
+    # model.add(BatchNormalization())
+    model.add(layers.MaxPooling2D((2, 2), strides= 2))
+    model.add(layers.Dropout(0.25))
     #
     # model.add(layers.Conv2D(512, (5,5), activation= 'relu'))
-    # model.add(layers.Flatten())
-    # model.add(Dense(512, activation='relu'))
-    # model.add(layers.Dense(271, activation='softmax'))
-    #
-    # optimizer = Adam(learning_rate= 0.04)
-    # model.compile(optimizer=optimizer, loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics= ['accuracy'])
-    # model.summary()
+    model.add(layers.Flatten())
+    model.add(Dense(1024, activation='relu'))
+    model.add(layers.Dense(len(all_kernels),activation='softmax'))
 
-#ResNet Ver. (Layers frozen)
-    base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False)
-    for layer in base_model.layers:
-        layer.trainable = False
-    x = base_model.output
-    x = layers.GlobalAveragePooling2D()(x)
-    x = Dense(1024, activation='relu')(x)
-    predictions = layers.Dense(271, activation='softmax')(x)
-    model = models.Model(inputs=base_model.input, outputs=predictions)
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.04),
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
+    model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics= ['accuracy'])
     model.summary()
 
+#ResNet Ver. (Layers frozen)
+    # base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False)
+    # for layer in base_model.layers:
+    #     layer.trainable = False
+    # N = 3
+    # for layer in base_model.layers[-N:]:
+    #     layer.trainable = True
+    # x = base_model.output
+    # x = layers.GlobalAveragePooling2D()(x)
+    # x = Dense(1024,kernel_initializer='he_normal', bias_initializer='zeros', activation='relu')(x)
+    # predictions = Dense(271, activation='softmax',kernel_initializer=RandomNormal(mean=0.0, stddev=0.05), bias_initializer=Constant(value=0.1))(x)
+    # model = models.Model(inputs=base_model.input, outputs=predictions)
+    # model.compile(optimizer='adam',
+    #               loss='sparse_categorical_crossentropy',
+    #               metrics=['accuracy'])
+    # model.summary()
 
-    cp_callbacks = tf.keras.callbacks.ModelCheckpoint(filepath= "./weights/w.weights.h5", save_weights_only= True, save_best_only= True)
+
+    cp_callbacks = tf.keras.callbacks.ModelCheckpoint(filepath="./checkpoint/weights.ckpt", save_weights_only= True, save_best_only= True)
     # model.save_weights('w.weights.h5')
 
-    history = model.fit(x_train, y_train, epochs=10, validation_split=0.2, batch_size= 64, callbacks= [cp_callbacks])
+    history = model.fit(x_train, y_train, epochs=20, validation_split=0.2, batch_size= 64, callbacks= [cp_callbacks])
 
     loss = history.history['loss']
     val_loss = history.history['val_loss']
