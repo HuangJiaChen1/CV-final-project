@@ -9,44 +9,63 @@ import os
 from tensorflow.keras.optimizers import Adam
 
 def load_or_preprocess():
-    if os.path.exists('x_processed_train.npy') and os.path.exists('y_train.npy'):
+    if os.path.exists('x_processed_train.npy') and os.path.exists('y_train.npy') and os.path.exists('kernels.npy'):
         print("Loading processed data...")
         x_processed_train = np.load('x_processed_train.npy')
         y_train = np.load('y_train.npy')
+        all_kernels = np.load('kernels.npy')
     else:
         print("Processed data not found. Running preprocessing...")
         from preprocess import process_data
-        x_processed_train, y_train = process_data()
+        x_processed_train, y_train, all_kernels = process_data()
         np.save('x_processed_train.npy', x_processed_train)
         np.save('y_train.npy', y_train)
+        np.save('kernels.npy',all_kernels)
 
-    return x_processed_train, y_train
+    return x_processed_train, y_train, all_kernels
 
 
-x_train, y_train = load_or_preprocess()
+x_train, y_train, all_kernels = load_or_preprocess()
 print(y_train)
 if __name__ == "__main__":
-    model = models.Sequential()
+# Original Ver.
+    # model = models.Sequential()
+    #
+    # # Convolutional layers
+    # model.add(layers.Conv2D(128, (5, 5), activation='relu', input_shape=(32, 32, 3)))
+    # # model.add(BatchNormalization())
+    # model.add(layers.MaxPooling2D((2, 2), strides= 2))
+    # # model.add(layers.Dropout(0.25))
+    #
+    # model.add(layers.Conv2D(256, (5, 5), activation='relu'))
+    # # model.add(BatchNormalization())
+    # model.add(layers.MaxPooling2D((2, 2), strides= 2))
+    # # model.add(layers.Dropout(0.25))
+    #
+    # model.add(layers.Conv2D(512, (5,5), activation= 'relu'))
+    # model.add(layers.Flatten())
+    # model.add(Dense(512, activation='relu'))
+    # model.add(layers.Dense(271, activation='softmax'))
+    #
+    # optimizer = Adam(learning_rate= 0.04)
+    # model.compile(optimizer=optimizer, loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics= ['accuracy'])
+    # model.summary()
 
-    # Convolutional layers
-    model.add(layers.Conv2D(128, (5, 5), activation='relu', input_shape=(32, 32, 3)))
-    model.add(BatchNormalization())
-    model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Dropout(0.25))
-
-    model.add(layers.Conv2D(256, (5, 5), activation='relu'))
-    model.add(BatchNormalization())
-    model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Dropout(0.25))
-
-    model.add(layers.Conv2D(512, (5,5), activation= 'relu'))
-    model.add(layers.Flatten())
-    model.add(Dense(512, activation='relu'))
-    model.add(layers.Dense(271, activation='softmax'))
-
-    optimizer = Adam(learning_rate= 0.04)
-    model.compile(optimizer=optimizer, loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics= ['accuracy'])
+#ResNet Ver. (Layers frozen)
+    base_model = tf.keras.applications.ResNet50(weights='imagenet', include_top=False)
+    for layer in base_model.layers:
+        layer.trainable = False
+    x = base_model.output
+    x = layers.GlobalAveragePooling2D()(x)
+    x = Dense(1024, activation='relu')(x)
+    predictions = layers.Dense(271, activation='softmax')(x)
+    model = models.Model(inputs=base_model.input, outputs=predictions)
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.04),
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
     model.summary()
+
+
     cp_callbacks = tf.keras.callbacks.ModelCheckpoint(filepath= "./weights/w.weights.h5", save_weights_only= True, save_best_only= True)
     # model.save_weights('w.weights.h5')
 

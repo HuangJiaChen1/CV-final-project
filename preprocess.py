@@ -69,11 +69,12 @@ def process_data():
             all_kernels.append(kernel)
 
     x_processed_train = []
-    y_train = np.zeros((100*271,1),dtype= int)
-    sequence = np.arange(271)
-    repeats = 100
-    y_train = np.tile(sequence, repeats).reshape((100*271, 1))
+    orig_img = []
+    # define how many images to be selected here
     num_indices = 100
+    y_train = np.zeros((num_indices*271,1),dtype= int)
+    sequence = np.arange(271)
+    y_train = np.tile(sequence, num_indices).reshape((num_indices*271, 1))
     random_indices = np.random.choice(x_train.shape[0], num_indices, replace=False)
 
     print("y train: ", y_train.shape)
@@ -81,6 +82,8 @@ def process_data():
     num = 0
     for i in random_indices:
         image = x_train[i]
+        # for j in range(len(all_kernels)):
+        #     orig_img.append(image)
         # print(image)
         blurred = apply_motion_blur(image)
         x_processed_train.append(blurred)
@@ -88,7 +91,14 @@ def process_data():
         num += 1
         print(num)
     x_processed_train = np.concatenate(x_processed_train, axis=0)
+
+    # orig_img = np.array(orig_img)
+    # x_processed_train = x_processed_train - orig_img
     print(x_processed_train.shape)
     np.save('x_processed_train.npy', x_processed_train)
     np.save('y_train.npy', y_train)
-    return x_processed_train, y_train
+    np.save('kernels.npy', all_kernels)
+    return x_processed_train, y_train, all_kernels
+
+if __name__ == "__main__":
+    process_data()
