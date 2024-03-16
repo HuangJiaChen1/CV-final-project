@@ -21,12 +21,12 @@ def create_model():
     model.add(layers.Conv2D(512, (5, 5), activation='relu'))
     model.add(layers.Flatten())
     model.add(Dense(512, activation='relu'))
-    model.add(layers.Dense(2, activation='linear'))
+    model.add(layers.Dense(271, activation='softmax'))
     return model
 
 model = create_model()
 model.load_weights("./weights/w.weights.h5")
-x_test = training.x_test
+x_test = training.x_train[:10]
 predictions = model.predict(x_test)
 for i, prediction in enumerate(predictions):
     print(f"Predicted parameters for sample {i}: {prediction}")
@@ -35,4 +35,5 @@ for i, prediction in enumerate(predictions):
     # angle = prediction[1]
     # kernel = training.generate_motion_blur_kernel(k,angle)
     # blurred_img = cv2.filter2D(image, -1, kernel)
-    print(training.y_test[i])
+    print(tf.argmax(prediction))
+    print(training.y_train[i])
