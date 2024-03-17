@@ -3,3 +3,6 @@
 *.h5
 *.h5
 /checkpoint
+*.keras
+*.data-00000-of-00001
+*.index

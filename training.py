@@ -33,18 +33,18 @@ if __name__ == "__main__":
     # Convolutional layers
     model.add(layers.Conv2D(32, (5,5), activation='relu', input_shape=(32, 32, 6)))
     # model.add(BatchNormalization())
-    model.add(layers.MaxPooling2D((2, 2), strides= 2))
+    model.add(layers.MaxPool2D((2, 2), strides= 2))
     # model.add(layers.Dropout(0.2))
 
     model.add(layers.Conv2D(64, (5, 5), activation='relu'))
     # model.add(BatchNormalization())
-    model.add(layers.MaxPooling2D((2, 2), strides= 2))
+    model.add(layers.MaxPool2D((2, 2), strides= 2))
     # model.add(layers.Dropout(0.2))
     #
     # model.add(layers.Conv2D(512, (5,5), activation= 'relu'))
     model.add(layers.Flatten())
-    model.add(Dense(128, activation='relu'))
-    model.add(layers.Dense(len(all_kernels),activation='softmax'))
+    model.add(layers.Dense(128, activation='relu'))
+    model.add(layers.Dense(units= len(all_kernels),activation='softmax'))
 
     model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits= False), metrics= ['sparse_categorical_accuracy'])
     model.summary()
@@ -67,11 +67,11 @@ if __name__ == "__main__":
     # model.summary()
 
 
-    cp_callbacks = tf.keras.callbacks.ModelCheckpoint(filepath="./checkpoint/weights.ckpt", save_weights_only= True, save_best_only= True)
+    # cp_callbacks = tf.keras.callbacks.ModelCheckpoint(filepath="./checkpoint/weights.ckpt", save_weights_only= True, save_best_only= True)
     # model.save_weights('w.weights.h5')
 
-    history = model.fit(x_train, y_train, epochs=10, validation_split=0.2, batch_size= 64, callbacks= [cp_callbacks])
-
+    history = model.fit(x_train, y_train, epochs=10, validation_split=0.2, batch_size= 64)
+    model.save_weights('model')
     loss = history.history['loss']
     val_loss = history.history['val_loss']
     accuracy = history.history['sparse_categorical_accuracy']
@@ -98,41 +98,3 @@ if __name__ == "__main__":
     plt.legend()
 
     plt.show()
-
-    x_test = np.concatenate((x_train[0:100],x_train[272:373]),axis= 0)
-    predictions = model.predict(x_test)
-    n = 0
-    correct = 0
-    for i, prediction in enumerate(predictions):
-        # print(f"Predicted parameters for sample {i}: {prediction}")
-        # image = x_test[i]
-        # k = int(prediction[0])
-        # angle = prediction[1]
-        # kernel = training.generate_motion_blur_kernel(k,angle)
-        # blurred_img = cv2.filter2D(image, -1, kernel)
-        out_class = np.argmax(prediction)
-        # print(out_class)
-        # print(prediction[out_class])
-        # print(training.y_train[i])
-        # print(prediction[training.y_train[i][0]])
-        n += 1
-        if prediction[out_class] == prediction[y_train[i][0]]:
-            correct +=1
-        # Visualization
-        plt.figure(figsize=(10, 5))
-        plt.subplot(1, 3, 1)
-        plt.imshow(all_kernels[out_class])
-        plt.title('Predicted Kernel')
-        plt.axis('off')
-
-        plt.subplot(1,3,2)
-        plt.imshow(all_kernels[y_train[i][0]])
-        plt.title("Ground Truth Kernel")
-        plt.axis('off')
-
-        plt.subplot(1,3,3)
-        plt.imshow(x_test[i][:,:,:3])
-        plt.title("train image")
-        plt.axis('off')
-        plt.show()
-    print('accuracy: ', correct/n)
