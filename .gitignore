@@ -2,3 +2,4 @@
 *.npy
 *.h5
 *.h5
+/checkpoint

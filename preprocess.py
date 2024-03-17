@@ -64,14 +64,14 @@ def process_data():
     kernel = generate_motion_blur_kernel(size=1, angle=0)
     all_kernels.append(kernel)
     for angle in range(0,151,30):
-        for size in range(2,31,2):
+        for size in range(2,25,2):
             kernel = generate_motion_blur_kernel(size=size, angle=angle)
             all_kernels.append(kernel)
     l = len(all_kernels)
     x_processed_train = []
     orig_img = []
     # define how many images to be selected here
-    num_indices = 500
+    num_indices = 1000
     y_train = np.zeros((num_indices*l,1),dtype= int)
     sequence = np.arange(l)
     y_train = np.tile(sequence, num_indices).reshape((num_indices*l, 1))
@@ -82,8 +82,8 @@ def process_data():
     num = 0
     for i in random_indices:
         image = x_train[i]
-        # for j in range(len(all_kernels)):
-        #     orig_img.append(image)
+        for j in range(len(all_kernels)):
+            orig_img.append(image)
         # print(image)
         blurred = apply_motion_blur(image)
         x_processed_train.append(blurred)
@@ -92,8 +92,8 @@ def process_data():
         print(num)
     x_processed_train = np.concatenate(x_processed_train, axis=0)
     #
-    # orig_img = np.array(orig_img)
-    # x_processed_train = np.concatenate((x_processed_train, orig_img),axis= -1)
+    orig_img = np.array(orig_img)
+    x_processed_train = np.concatenate((x_processed_train, orig_img),axis= -1)
     print(x_processed_train.shape)
     np.save('x_processed_train.npy', x_processed_train)
     np.save('y_train.npy', y_train)
