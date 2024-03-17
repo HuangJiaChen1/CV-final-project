@@ -2,7 +2,7 @@ import tensorflow as tf
 import keras
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.initializers.initializers import RandomNormal, Constant
+# from keras.initializers.initializers import RandomNormal, Constant
 from keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Dropout, Flatten, Dense
 from tensorflow.python.keras import models, layers
 import os
