@@ -150,10 +150,15 @@ while True:
     if not ret_val:
         break
     n += 1
-    frame_patches = img2patch(frame)
+    X = np.arange(x, x + w, dtype=np.float32) + p[0]
+    Y = np.arange(y, y + h, dtype=np.float32) + p[1]
+    X, Y = np.meshgrid(X, Y)
+    warp = np.array([[1, 0], [0, 1]])
+    I = cv2.remap(frame, X, Y, cv2.INTER_LINEAR)
+    frame_patches = img2patch(I)
     #predict with CNN model
     for i in range(len(frame_patches)):
-        input = np.concatenate((frame_patches, template_patches), axis=-1)
+        input = np.concatenate((frame_patches[i], template_patches[i]), axis=-1)
         input_batch = np.expand_dims(input, axis=0)
         out = model.predict(input_batch)
         out_class = np.argmax(out)
@@ -162,7 +167,7 @@ while True:
     size, angle = index_to_size_angle(k)
     v1 = size * np.cos(np.radians(angle))
     v2 = size * np.sin(np.radians(angle))
-    v = np.array([v1,v2])
+    v = np.array([v1,v2]).reshape(-1,1)
     p += v
     model_outputs = []
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
