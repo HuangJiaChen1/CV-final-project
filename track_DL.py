@@ -165,8 +165,8 @@ while True:
         model_outputs.append(out_class)
     k = most_frequent_element(model_outputs)
     size, angle = index_to_size_angle(k)
-    v1 = size * np.cos(np.radians(angle))
-    v2 = size * np.sin(np.radians(angle))
+    v1 = size * np.cos(-np.radians(angle))
+    v2 = size * np.sin(-np.radians(angle))
     v = np.array([v1,v2]).reshape(-1,1)
     p += v
     model_outputs = []
@@ -174,7 +174,7 @@ while True:
     u = np.array([0, 0])
     iter = 0
     p = track(iter,x,y,w,h,last_dim,p)
-    cv2.rectangle(frame, (x + int(p[0]), y + int(p[1])), (x + int(p[0]) + w, y + int(p[1]) + h), (0, 255, 0), 2)
+    cv2.rectangle(frame, (x + int(p[0]), y + int(p[1])), (x + int(p[0]) + w, y + int(p[1]) + h), (255, 0, 0), 2)
     cv2.imshow('Tracking', frame)
     cv2.imwrite(f'./frame_dl/frame_{n}.jpg', frame)
     k = cv2.waitKey(1)
