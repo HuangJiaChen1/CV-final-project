@@ -30,10 +30,10 @@ model_outputs = []
 max_iter = 20
 def track(iter,x,y,w,h,last_dim,p):
     while iter <= max_iter:
-        X = np.arange(x, x + w, dtype=np.float32) + p[0]
-        Y = np.arange(y, y + h, dtype=np.float32) + p[1]
+        X = np.arange(x + int(p[0]), x + int(p[0]) + w, dtype=np.float32)
+        Y = np.arange(y + int(p[1]), y + int(p[1]) + h, dtype=np.float32)
         X, Y = np.meshgrid(X, Y)
-        warp = np.array([[1,0],[0,1]])
+        warp = np.array([[1, 0], [0, 1]])
         I = cv2.remap(frame_gray, X, Y, cv2.INTER_LINEAR)
         dim = np.float32(I) - np.float32(template)
 
@@ -79,7 +79,7 @@ def index_to_size_angle(index):
         return (1,0)
     else:
         index -=1
-    num_sizes = 7
+    num_sizes = 12
     angle_step = 10
     size_step = 2
     size_start = 2
@@ -90,7 +90,7 @@ def index_to_size_angle(index):
     angle = angle_index * angle_step
     size = size_index * size_step + size_start
 
-    if angle > 170 or size > 15:
+    if angle > 170 or size > 25:
         print(size,angle)
         print("Index out of range")
         return "Index out of range"
@@ -185,11 +185,13 @@ while True:
     # end_x = min(start_x + w, frame.shape[1])
     # end_y = min(start_y + h, frame.shape[0])
     # I = frame[start_y:end_y, start_x:end_x]
-    X = np.arange(x, x + w, dtype=np.float32) + p[0]
-    Y = np.arange(y, y + h, dtype=np.float32) + p[1]
+    X = np.arange(x + int(p[0]), x + int(p[0]) + w, dtype=np.float32)
+    Y = np.arange(y + int(p[1]), y + int(p[1]) + h, dtype=np.float32)
     X, Y = np.meshgrid(X, Y)
     warp = np.array([[1, 0], [0, 1]])
     I = cv2.remap(frame, X, Y, cv2.INTER_LINEAR)
+    cv2.imshow('image',I)
+    cv2.waitKey(0)
     print(I.shape)
     frame_patches = img2patch(I)
     print(len(frame_patches))
@@ -206,15 +208,15 @@ while True:
         motion_vectors[1,i] = v2
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     u = np.mean(motion_vectors, axis=1)
-    x += int(u[0])
-    y += int(u[1])
-    cv2.rectangle(frame, (x,y), (x  + w, y  + h), (0, 255, 0), 2)
+
+    # cv2.rectangle(frame, (x,y), (x  + w, y  + h), (0, 255, 0), 2)
     print(u)
     p += np.array(u).astype(np.float32).reshape(-1, 1)
     iter = 0
     p = track(iter, x, y, w, h, last_dim, p)
     cv2.rectangle(frame, (x + int(p[0]), y + int(p[1])), (x + int(p[0]) + w, y + int(p[1]) + h), (255, 0, 0), 2)
-
+    # x += int(u[0])
+    # y += int(u[1])
 
     # # Update particles
     # particles, mean_particle = particle_filter_update(particles, frame_gray, template, x, y, w, h, num_particles)

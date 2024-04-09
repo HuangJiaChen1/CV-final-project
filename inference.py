@@ -41,7 +41,7 @@ def index_to_size_angle(index):
         return (1,0)
     else:
         index -=1
-    num_sizes = 7
+    num_sizes = 12
     angle_step = 10
     size_step = 2
     size_start = 2
@@ -52,7 +52,7 @@ def index_to_size_angle(index):
     angle = angle_index * angle_step
     size = size_index * size_step + size_start
 
-    if angle > 170 or size > 15:
+    if angle > 170 or size > 25:
         print(size,angle)
         print("Index out of range")
         return "Index out of range"

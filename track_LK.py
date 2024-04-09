@@ -56,6 +56,14 @@ while True:
     if not ret_val:
         break
     n += 1
+    # Visualization
+    X = np.arange(x, x + w, dtype=np.float32) + p[0]
+    Y = np.arange(y, y + h, dtype=np.float32) + p[1]
+    X, Y = np.meshgrid(X, Y)
+    warp = np.array([[1, 0], [0, 1]])
+    I = cv2.remap(frame, X, Y, cv2.INTER_LINEAR)
+    cv2.imshow('image', I)
+    cv2.waitKey(0)
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
     u = np.array([0, 0])
     iter = 0
