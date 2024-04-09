@@ -63,8 +63,8 @@ def process_data():
     #create all kernels
     kernel = generate_motion_blur_kernel(size=1, angle=0)
     all_kernels.append(kernel)
-    for angle in range(0,151,30):
-        for size in range(2,25,2):
+    for angle in range(0,171,10):
+        for size in range(2,15,2):
             kernel = generate_motion_blur_kernel(size=size, angle=angle)
             all_kernels.append(kernel)
     l = len(all_kernels)
