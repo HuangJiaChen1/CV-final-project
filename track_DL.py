@@ -123,27 +123,27 @@ def apply_motion_vectors_to_particles(particles, motion_vectors, w, h, patch_siz
     particles += avg_motion_vector.reshape(1, 2)  # Broadcast addition
 
     return particles
-def particle_filter_update(particles, frame_gray, template, x, y, w, h, num_particles=100, sigma=10.0):
-    particles = apply_motion_vectors_to_particles(particles, motion_vectors, w, h)
-    weights = np.zeros(num_particles)
-    for i, particle in enumerate(particles):
-        px, py = int(particle[0]), int(particle[1])
-        try:
-            particle_roi = frame_gray[py:py + h, px:px + w]
-            if particle_roi.shape[0] != h or particle_roi.shape[1] != w:
-                weights[i] = 0.1
-            else:
-                error = np.sum((template.astype(float) - particle_roi.astype(float)) ** 2)
-                weights[i] = np.exp(-error / (2 * (sigma ** 2)))
-        except IndexError:
-            weights[i] = 0.1
-    weights += 1.e-10  # Avoid division by zero
-    weights /= weights.sum()
-
-    indices = np.random.choice(num_particles, num_particles, p=weights)
-    particles[:] = particles[indices]
-    mean_particle = np.mean(particles, axis=0)
-    return particles, mean_particle
+# def particle_filter_update(particles, frame_gray, template, x, y, w, h, num_particles=100, sigma=10.0):
+#     particles = apply_motion_vectors_to_particles(particles, motion_vectors, w, h)
+#     weights = np.zeros(num_particles)
+#     for i, particle in enumerate(particles):
+#         px, py = int(particle[0]), int(particle[1])
+#         try:
+#             particle_roi = frame_gray[py:py + h, px:px + w]
+#             if particle_roi.shape[0] != h or particle_roi.shape[1] != w:
+#                 weights[i] = 0.1
+#             else:
+#                 error = np.sum((template.astype(float) - particle_roi.astype(float)) ** 2)
+#                 weights[i] = np.exp(-error / (2 * (sigma ** 2)))
+#         except IndexError:
+#             weights[i] = 0.1
+#     weights += 1.e-10  # Avoid division by zero
+#     weights /= weights.sum()
+#
+#     indices = np.random.choice(num_particles, num_particles, p=weights)
+#     particles[:] = particles[indices]
+#     mean_particle = np.mean(particles, axis=0)
+#     return particles, mean_particle
 
 
 # Initialize video capture
@@ -190,30 +190,63 @@ while True:
     X, Y = np.meshgrid(X, Y)
     warp = np.array([[1, 0], [0, 1]])
     I = cv2.remap(frame, X, Y, cv2.INTER_LINEAR)
-    cv2.imshow('image',I)
-    cv2.waitKey(0)
+    # cv2.imshow('image',I)
+    # cv2.waitKey(0)
     print(I.shape)
     frame_patches = img2patch(I)
     print(len(frame_patches))
-    motion_vectors = np.empty((2,len(frame_patches)))
+    motion_vectors1 = np.empty((2,len(frame_patches)))
+    motion_vectors2 = np.empty((2, len(frame_patches)))
     for i in range(len(frame_patches)):
         input = np.concatenate((frame_patches[i], template_patches[i]), axis=-1)
         input_batch = np.expand_dims(input, axis=0)
         out = model.predict(input_batch)
         out_class = np.argmax(out)
         size, angle = index_to_size_angle(out_class)
-        v1 = size * np.cos(-np.radians(angle))
-        v2 = size * np.sin(-np.radians(angle))
-        motion_vectors[0,i] = v1
-        motion_vectors[1,i] = v2
+        v1 = size * np.cos(np.radians(angle))
+        v2 = size * np.sin(np.radians(angle))
+        motion_vectors1[0,i] = v1
+        motion_vectors1[1,i] = v2
+        motion_vectors2[0, i] = -v1
+        motion_vectors2[1, i] = -v2
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    u = np.mean(motion_vectors, axis=1)
-
+    u1 = np.mean(motion_vectors1, axis=1)
+    u2 = np.mean(motion_vectors2, axis=1)
     # cv2.rectangle(frame, (x,y), (x  + w, y  + h), (0, 255, 0), 2)
-    print(u)
-    p += np.array(u).astype(np.float32).reshape(-1, 1)
+    print(u1)
+    candidate_p1 = p.copy()
+    candidate_p2 = p.copy()
+    candidate_p3 = p.copy()
+    candidate_p1 += np.array(u1).astype(np.float32).reshape(-1, 1)
+    candidate_p3 +=np.array(u2).astype(np.float32).reshape(-1, 1)
     iter = 0
-    p = track(iter, x, y, w, h, last_dim, p)
+    candidate_p1 = track(iter, x, y, w, h, last_dim, candidate_p1)
+    candidate_p2 = track(iter, x, y, w, h, last_dim, candidate_p2)
+    candidate_p3 = track(iter, x, y, w, h, last_dim, candidate_p3)
+    X = np.arange(x + int(candidate_p1[0]), x + int(candidate_p1[0]) + w, dtype=np.float32)
+    Y = np.arange(y + int(candidate_p1[1]), y + int(candidate_p1[1]) + h, dtype=np.float32)
+    X, Y = np.meshgrid(X, Y)
+    candidate_img1 = cv2.remap(frame_gray, X, Y, cv2.INTER_LINEAR)
+    X = np.arange(x + int(candidate_p2[0]), x + int(candidate_p2[0]) + w, dtype=np.float32)
+    Y = np.arange(y + int(candidate_p2[1]), y + int(candidate_p2[1]) + h, dtype=np.float32)
+    X, Y = np.meshgrid(X, Y)
+    candidate_img2 = cv2.remap(frame_gray, X, Y, cv2.INTER_LINEAR)
+    X = np.arange(x + int(candidate_p3[0]), x + int(candidate_p3[0]) + w, dtype=np.float32)
+    Y = np.arange(y + int(candidate_p3[1]), y + int(candidate_p3[1]) + h, dtype=np.float32)
+    X, Y = np.meshgrid(X, Y)
+    candidate_img3 = cv2.remap(frame_gray, X, Y, cv2.INTER_LINEAR)
+    sqr_diff1 = (candidate_img1-template) **2
+    sqr_diff2 = (candidate_img2-template) **2
+    sqr_diff3 = (candidate_img3 - template) ** 2
+    ssd1 = np.sum(sqr_diff1)
+    ssd2 = np.sum(sqr_diff2)
+    ssd3 = np.sum(sqr_diff3)
+    if ssd1 == min(ssd1,ssd2,ssd3):
+        p = candidate_p1
+    elif ssd2 == min(ssd1,ssd2,ssd3):
+        p = candidate_p2
+    elif ssd3 == min(ssd1,ssd2,ssd3):
+        p = candidate_p3
     cv2.rectangle(frame, (x + int(p[0]), y + int(p[1])), (x + int(p[0]) + w, y + int(p[1]) + h), (255, 0, 0), 2)
     # x += int(u[0])
     # y += int(u[1])

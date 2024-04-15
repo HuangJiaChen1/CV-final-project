@@ -40,22 +40,32 @@ def apply_motion_blur(img):
         '''
         Visualization
         '''
-        # plt.figure(figsize=(10, 5))
-        # plt.subplot(1, 3, 1)
-        # plt.imshow(img)
-        # plt.title('Original Image')
-        # plt.axis('off')
-        #
-        # plt.subplot(1, 3, 2)
-        # plt.imshow(blurred_img)
-        # plt.title('Motion Blurred Image')
-        # plt.axis('off')
-        #
-        # plt.subplot(1,3,3)
-        # plt.imshow(kernel)
-        # plt.title('Kernel')
-        # plt.axis('off')
-        # plt.show()
+        concat_image = np.concatenate((img,blurred_img),axis=2)
+        img1_channels = concat_image[:, :, :3]  # Channels from the first image
+        img2_channels = concat_image[:, :, 3:]  # Channels from the second image
+        averaged_image = (img1_channels + img2_channels) / 2
+        print(averaged_image.shape)
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 4, 1)
+        plt.imshow(img)
+        plt.title('Original Image')
+        plt.axis('off')
+
+        plt.subplot(1, 4, 2)
+        plt.imshow(blurred_img)
+        plt.title('Motion Blurred Image')
+        plt.axis('off')
+
+        plt.subplot(1,4,3)
+        plt.imshow(kernel)
+        plt.title('Kernel')
+        plt.axis('off')
+
+        plt.subplot(1,4,4)
+        plt.imshow(averaged_image)
+        plt.title('Stacked')
+        plt.axis('off')
+        plt.show()
     all_blurred = np.array(all_blurred)
     return all_blurred
 
